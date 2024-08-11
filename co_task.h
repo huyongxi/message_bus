@@ -68,7 +68,7 @@ class Co_Task
         std::atomic<CoState> state_{CoState::NormalState};
     };
 
-    promise_type* promise_;
+    promise_type* promise_ = nullptr;
 
 };
 

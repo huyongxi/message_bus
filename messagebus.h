@@ -1,7 +1,9 @@
 #pragma once
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
 #include <coroutine>
+#include <sys/types.h>
 #include "co_task.h"
 #include "concurrentqueue.h"
 
@@ -29,4 +31,15 @@ class MessageBus
     static thread_local Co_Task co_task_;
     std::mutex mutex_;
     std::condition_variable cv_;
+    std::atomic<uint16_t> suspend_co_num_ = 0;
+};
+
+
+#include <string>
+using std::string;
+
+struct TestMessage
+{
+    string name;
+    string data;
 };
