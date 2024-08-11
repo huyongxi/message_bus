@@ -18,7 +18,7 @@ enum class CoState : uint8_t
 };
 
 
-class Co_Task
+class CoTask
 {
     public:
 
@@ -29,13 +29,13 @@ class Co_Task
 
     void resume()
     {
-        coroutine_handle<Co_Task::promise_type>::from_promise(*promise_).resume();
+        coroutine_handle<CoTask::promise_type>::from_promise(*promise_).resume();
     }
 
     class promise_type
     {
         public:
-        Co_Task get_return_object()
+        CoTask get_return_object()
         {
             return {this};
         }
@@ -81,7 +81,7 @@ class StopAwait
         return false;
     }
 
-    void await_suspend(coroutine_handle<Co_Task::promise_type> handle)
+    void await_suspend(coroutine_handle<CoTask::promise_type> handle)
     {
         handle.promise().state_ = CoState::StopState;
         handle_ = handle;
@@ -93,5 +93,5 @@ class StopAwait
     }
 
     private:
-    coroutine_handle<Co_Task::promise_type> handle_;
+    coroutine_handle<CoTask::promise_type> handle_;
 };
