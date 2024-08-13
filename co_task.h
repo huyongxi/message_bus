@@ -14,7 +14,8 @@ enum class CoState : uint8_t
     NormalState = 0,
     ExceptionState = 1,
     StopState = 2,
-    TimeoutState = 3,
+    QueueResume = 3,
+    TimeoutState = 4,
 };
 
 
@@ -63,6 +64,12 @@ class CoTask
         {
             return {};
         }
+
+        // template <typename U>
+        // U&& await_transform(U&& awaitable) noexcept
+        // {
+        //     return static_cast<U&&>(awaitable);
+        // }
 
         std::exception_ptr exception_;
         std::atomic<CoState> state_{CoState::NormalState};

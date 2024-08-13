@@ -24,15 +24,30 @@ MessageAwait<DATA>::~MessageAwait()
 template<typename DATA>
 bool MessageAwait<DATA>::push_message(DATA data)
 {
+    static int c = 0;
+    ++c;
+    if (c % 10000 == 0)
+    {
+        std::cout << "await push " << c << std::endl;
+    }
     auto r = queue_.enqueue(std::move(data));
-    co_executor_->post_coroutine(handle_);
+    if (handle_.promise().state_ == CoState::StopState)
+    {
+        co_executor_->push_coroutine(handle_, 10);
+    }
     return r;
 }
 
 template<typename DATA>
 bool MessageBus<DATA>::push_message(DATA&& data)
 {
+    static int i = 0;
     bool r = queue_.enqueue(std::move(data));
+    if (r && ++i % 10000 == 0)
+    {
+        std::cout << "m push " << i << std::endl;
+    }
+
     if (suspend_co_num_ > 0 && r)
     {
         cv_.notify_one();
@@ -42,8 +57,9 @@ bool MessageBus<DATA>::push_message(DATA&& data)
 
 
 template<typename DATA>
-MessageBus<DATA>::IterType MessageBus<DATA>::add_message_await(MessageAwait<DATA>* message_await)
+typename MessageBus<DATA>::IterType MessageBus<DATA>::add_message_await(MessageAwait<DATA>* message_await)
 {
+    t = message_await;
     auto& l =  all_message_await_[message_await->wait_message_name_];
     return l.insert(l.end(), message_await);
 }
@@ -57,13 +73,13 @@ void MessageBus<DATA>::remove_message_await(MessageBus<DATA>::IterType iter)
 template<typename DATA>
 void MessageBus<DATA>::run()
 {
-    co_task_ = dispatch_message();
+    CoTask co_task = dispatch_message();
     while (true)
     {
         std::unique_lock lk(mutex_);
         cv_.wait(lk, [this](){return queue_.size_approx() > 0;});
         lk.unlock();
-        co_task_.resume();
+        co_task.resume();
     }
 }
 
@@ -74,27 +90,32 @@ CoTask MessageBus<DATA>::dispatch_message()
     {
         DATA data;
         bool r = queue_.try_dequeue(data);
+        
         if (r)
         {
-            auto iter = all_message_await_.find(data.name);
-            if (iter != all_message_await_.end())
+            static std::atomic<int> c = 0;
+            ++c;
+            if (c % 10000 == 0)
             {
-                for (const auto& a : iter->second)
-                {
-                    a->push_message(data);
-                }
+                std::cout << "dispatch push " << c << std::endl;
             }
+            t->push_message(data);
+            // auto iter = all_message_await_.find(data.name);
+            // if (iter != all_message_await_.end())
+            // {
+            //     for (const auto& a : iter->second)
+            //     {
+            //         a->push_message(data);
+            //     }
+            // }
         }else 
         {
             ++suspend_co_num_;
-            co_await StopAwait();
+            //co_await StopAwait();
             --suspend_co_num_;
         }
     }
 }
-
-template<typename DATA>
-thread_local CoTask MessageBus<DATA>::co_task_;
 
 
 
@@ -102,3 +123,4 @@ thread_local CoTask MessageBus<DATA>::co_task_;
 
 
 template class MessageBus<TestMessage>;
+template class MessageAwait<TestMessage>;
