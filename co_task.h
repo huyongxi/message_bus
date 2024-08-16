@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <exception>
-#include <coroutine>
+#include "coroutine.h"
 #include <atomic>
 
 using std::coroutine_handle;
@@ -22,15 +22,9 @@ enum class CoState : uint8_t
 class CoTask
 {
     public:
-
-    bool is_stop()
-    {
-        return promise_->state_ == CoState::StopState;
-    }
-
     void resume()
     {
-        coroutine_handle<CoTask::promise_type>::from_promise(*promise_).resume();
+        coroutine_handle<CoTask::promise_type>::from_promise(promise_).resume();
     }
 
     class promise_type
@@ -38,7 +32,7 @@ class CoTask
         public:
         CoTask get_return_object()
         {
-            return {this};
+            return {*this};
         }
 
         suspend_never initial_suspend()
@@ -74,9 +68,7 @@ class CoTask
         std::exception_ptr exception_;
         std::atomic<CoState> state_{CoState::NormalState};
     };
-
-    promise_type* promise_ = nullptr;
-
+    promise_type& promise_;
 };
 
 class StopAwait
