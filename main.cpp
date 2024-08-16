@@ -46,9 +46,6 @@ int main()
     test_msg1(message_bus.get(), co_executor.get(), 3);
     test_msg2(message_bus.get(), co_executor.get());
     test_msg3(message_bus.get(), co_executor.get());
-
-
-    moodycamel::ConcurrentQueue<TestMessage> q;
     
     std::thread t1([&]()
     {
@@ -59,7 +56,7 @@ int main()
             msg.name = "msg1";
             msg.data = std::to_string(++i);
             auto r = message_bus->push_message(std::move(msg));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     });
 
