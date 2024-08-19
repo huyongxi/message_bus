@@ -10,7 +10,8 @@ CoTask test_msg1(MessageBus<TestMessage>* message_bus, CoExecutor* co_executor, 
     {
         TestMessage msg = co_await await;
         std::cout << std::this_thread::get_id() << " " << id << " msg1 " << msg.data << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        co_await message_bus->create_once_message_await(co_executor, "msg3");
+        //std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
@@ -41,11 +42,11 @@ int main()
     auto message_bus = std::make_shared<MessageBus<TestMessage>>();
     auto co_executor = std::make_shared<CoExecutor>(3);
     co_executor->start();
-    test_msg1(message_bus.get(), co_executor.get(), 1);
-    test_msg1(message_bus.get(), co_executor.get(), 2);
-    test_msg1(message_bus.get(), co_executor.get(), 3);
-    test_msg2(message_bus.get(), co_executor.get());
-    test_msg3(message_bus.get(), co_executor.get());
+    auto a1 = test_msg1(message_bus.get(), co_executor.get(), 1);
+    auto a2 = test_msg1(message_bus.get(), co_executor.get(), 2);
+    auto a3 = test_msg1(message_bus.get(), co_executor.get(), 3);
+    auto a4 = test_msg2(message_bus.get(), co_executor.get());
+    auto a5 = test_msg3(message_bus.get(), co_executor.get());
     
     std::thread t1([&]()
     {
@@ -56,7 +57,7 @@ int main()
             msg.name = "msg1";
             msg.data = std::to_string(++i);
             auto r = message_bus->push_message(std::move(msg));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     });
 
@@ -69,7 +70,7 @@ int main()
             msg.name = "msg2";
             msg.data = std::to_string(++i);
             message_bus->push_message(std::move(msg));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     });
 
@@ -82,7 +83,7 @@ int main()
             msg.name = "msg3";
             msg.data = std::to_string(++i);
             message_bus->push_message(std::move(msg));
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     });
 

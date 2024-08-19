@@ -67,6 +67,7 @@ class CoTask
 
         std::exception_ptr exception_;
         std::atomic<CoState> state_{CoState::NormalState};
+        void* await = nullptr;
     };
     promise_type& promise_;
 };
