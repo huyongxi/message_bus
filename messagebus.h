@@ -157,7 +157,7 @@ class SharedMessageAwait
     }
     bool resume_one_coroutine(const T& data)
     {
-        if (handle_.promise().await != this)
+        if (!handle_ || handle_.promise().await != this)
         {
             return false;
         }
@@ -213,6 +213,7 @@ class MessageAwait
 
     bool push_message(T data)
     {
+        if (!handle_) return false;
         bool r = queue_.enqueue(std::move(data));
         if (handle_.promise().await == this)
         {
@@ -257,11 +258,9 @@ class OnceMessageAwait
 
     bool push_message(T data)
     {
+        if (!handle_) return false;
         data_ = std::move(data);
-        
-        std::cout << handle_.address() << std::endl;
-        auto cc = handle_.promise().await;
-        if (cc == this)
+        if (handle_.promise().await == this)
         {
             co_executor_->resume_coroutine(handle_);
         }
